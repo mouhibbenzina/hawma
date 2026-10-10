@@ -16,5 +16,7 @@ COPY server ./server
 COPY shared ./shared
 COPY --from=build /app/dist ./dist
 
+USER node
+
 EXPOSE 5000
 CMD ["npm", "start"]

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
+import { spawnSync } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -26,12 +27,13 @@ async function startApi(dataDirectory) {
   const environment = {
     ...process.env,
     PORT: String(port),
-    NODE_ENV: 'production',
+    NODE_ENV: 'test',
     DOTENV_CONFIG_PATH: path.join(dataDirectory, 'no-project-env'),
     DATA_FILE: path.join(dataDirectory, 'reports.json'),
     SEED_DEMO_DATA: 'false',
     ADMIN_TOKEN: 'a'.repeat(64),
     SUPPORT_SECRET: 'b'.repeat(64),
+    TRUST_PROXY_HOPS: '1',
   };
   delete environment.MONGODB_URI;
   const child = spawn(process.execPath, ['server/index.js'], {
@@ -75,6 +77,7 @@ test('moderation queue, anonymous actions, and private metadata persist across r
     if (api) await stopApi(api.child);
     await rm(dataDirectory, { recursive: true, force: true });
   });
+
   api = await startApi(dataDirectory);
 
   const health = await (await fetch(`${api.url}/api/health`)).json();
@@ -178,4 +181,44 @@ test('moderation queue, anonymous actions, and private metadata persist across r
   assert.equal(persistedQueue.data.reports[0].flagCount, 1);
   assert.equal(persistedQueue.data.reports[0].moderationNote, 'Reviewed by moderator.');
   assert.equal(persistedQueue.data.reports[0].visibility, 'public');
+});
+
+test('production refuses to start without MongoDB', () => {
+  const result = spawnSync(process.execPath, ['server/index.js'], {
+    cwd: projectRoot,
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      DOTENV_CONFIG_PATH: path.join(os.tmpdir(), 'hawma-production-no-env'),
+      MONGODB_URI: '',
+      ADMIN_TOKEN: 'a'.repeat(64),
+      SUPPORT_SECRET: 'b'.repeat(64),
+      TRUST_PROXY_HOPS: '1',
+    },
+    encoding: 'utf8',
+    timeout: 5000,
+    windowsHide: true,
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Production requires MONGODB_URI/);
+});
+
+test('production behind a proxy refuses an unspecified proxy trust policy', () => {
+  const result = spawnSync(process.execPath, ['server/index.js'], {
+    cwd: projectRoot,
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      DOTENV_CONFIG_PATH: path.join(os.tmpdir(), 'hawma-production-proxy-env'),
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/hawma',
+      ADMIN_TOKEN: 'a'.repeat(64),
+      SUPPORT_SECRET: 'b'.repeat(64),
+      TRUST_PROXY_HOPS: '0',
+    },
+    encoding: 'utf8',
+    timeout: 5000,
+    windowsHide: true,
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /TRUST_PROXY_HOPS to be a positive integer/);
 });

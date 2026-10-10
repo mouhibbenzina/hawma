@@ -98,6 +98,8 @@ The palette is built for a bright, high-contrast civic reading surface, with sat
 
 **Character:** Barlow provides compact, clear Latin signage; Changa carries Arabic labels and copy. The interface holds to one 15px size and creates rank with weight, case, alignment, and panel reversal rather than a size ladder.
 
+Barlow and Changa are bundled and served by Hawma itself under their SIL Open Font Licenses; page visits do not request fonts from a third-party provider.
+
 ### Hierarchy
 - **Title** (700, 15px, 1.4): Page and section headings use weight and placement rather than scale.
 - **Body** (400, 15px, 1.55): Descriptions and supporting copy use generous line height.

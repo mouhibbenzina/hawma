@@ -21,11 +21,16 @@ const validCategories = new Set(['water', 'waste', 'road', 'lighting', 'other'])
 const validStatuses = new Set(['new', 'in_progress', 'resolved']);
 const validVisibilities = new Set(['pending', 'public', 'hidden']);
 const validGovernorates = new Set(governorates.map(({ id }) => id));
-const seedDemoData = process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_DATA === 'true';
+const seedDemoData = process.env.NODE_ENV === 'test'
+  ? false
+  : process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_DATA === 'true';
 const supportSecret = process.env.SUPPORT_SECRET || (
   process.env.NODE_ENV === 'production' ? '' : randomBytes(32).toString('hex')
 );
 if (process.env.NODE_ENV === 'production') {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('Production requires MONGODB_URI; local JSON storage is not production-ready.');
+  }
   if (!process.env.ADMIN_TOKEN || process.env.ADMIN_TOKEN.length < 32) {
     throw new Error('Production requires an ADMIN_TOKEN with at least 32 characters.');
   }
@@ -74,6 +79,9 @@ let databaseMode = 'local';
 
 app.disable('x-powered-by');
 const trustedProxyHops = Number(process.env.TRUST_PROXY_HOPS);
+if (process.env.NODE_ENV === 'production' && (!Number.isInteger(trustedProxyHops) || trustedProxyHops < 1)) {
+  throw new Error('Production requires TRUST_PROXY_HOPS to be a positive integer matching the proxy chain.');
+}
 if (Number.isInteger(trustedProxyHops) && trustedProxyHops > 0) {
   app.set('trust proxy', trustedProxyHops);
 }
@@ -83,13 +91,13 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      fontSrc: ["'self'", 'data:'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
       imgSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      styleSrc: ["'self'", "'unsafe-inline'"],
     },
   },
 }));
@@ -566,6 +574,28 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: 'Le service a rencontré une erreur. Réessayez dans un instant.' });
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Hawma API listening on http://localhost:${port} (${databaseMode} mode)`);
 });
+
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} received; closing the API and database connection.`);
+  server.close(async (error) => {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect().catch((disconnectError) => {
+        console.error('MongoDB disconnect failed during shutdown.', disconnectError);
+        process.exitCode = 1;
+      });
+    }
+    if (error) {
+      console.error('HTTP server failed to close cleanly.', error);
+      process.exitCode = 1;
+    }
+  });
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

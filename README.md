@@ -44,7 +44,7 @@ $env:NODE_ENV="production"
 npm start
 ```
 
-Before starting production, copy `.env.example` to `.env` and configure MongoDB, a moderator key, and a stable anonymous-interaction key. The server refuses production startup when either application key is missing or shorter than 32 characters. Generate two random secrets locally:
+Before starting production, copy `.env.example` to `.env` and configure MongoDB, a moderator key, and a stable anonymous-interaction key. Production startup refuses to use the local JSON fallback and fails if `MONGODB_URI` is missing or if either application key is shorter than 32 characters. Generate two random secrets locally:
 
 ```powershell
 node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))"
@@ -58,6 +58,7 @@ Set one generated value as `ADMIN_TOKEN` and another as `SUPPORT_SECRET` in `.en
 - **API:** Node.js and Express
 - **Database:** MongoDB through Mongoose, with an atomic JSON-file fallback for a single server instance
 - **Community actions:** anonymous, per-browser support and content flags; no names, accounts, or email addresses are collected
+- **Fonts:** Barlow and Changa are self-hosted under the SIL Open Font License; page visits do not request fonts from an external provider
 
 ## API
 
@@ -123,7 +124,7 @@ MongoDB is not published on a host port. Its data lives in the `mongodb_data` Do
 docker compose exec -T mongo-backup sh -ec 'mongorestore --uri="$MONGODB_URI" --archive=/backups/hawma-YYYYMMDDTHHMMSSZ.archive.gz --gzip --drop'
 ```
 
-The Compose stack is a single-host pilot, not high availability: the app, MongoDB, and backup volume still share one VPS, and app rate limits are in memory. Keep the host patched, restrict SSH, use unique strong secrets, monitor disk/backup health, copy backups off-host, and test recovery. Before broader public use, add a shared rate-limit store, bot mitigation, an operational removal/contact process, and a documented data-retention policy. No design can guarantee that a website will never be compromised or unavailable.
+The Compose stack is a single-host pilot, not high availability: the app, MongoDB, and backup volume still share one VPS, and app rate limits are in memory. Keep the host patched, restrict SSH, use unique strong secrets, monitor disk/backup health, copy backups off-host, and test recovery. The database and backup containers restart after process or host restarts, and the backup container reports unhealthy if no recent archive exists. This does not repair storage failures or make the same-host archive a recovery copy; arrange encrypted off-site backups and test restores before depending on the service. GitHub Actions runs dependency, API integration, production build, and image-build checks on pushes and pull requests; passing CI does not deploy or provide runtime monitoring. Before broader public use, add a shared rate-limit store, bot mitigation, an operational removal/contact process, and a documented data-retention policy. No design can guarantee that a website will never be compromised or unavailable.
 
 ## License
 

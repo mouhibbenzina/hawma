@@ -7,6 +7,7 @@ import {
   CircleAlert,
   Clock3,
   Droplets,
+  Flag,
   Lightbulb,
   LoaderCircle,
   MapPin,
@@ -16,8 +17,10 @@ import {
   Send,
   Signpost,
   Trash2,
+  ThumbsUp,
   X,
 } from 'lucide-react';
+import { governorates } from '../shared/governorates.js';
 
 const copy = {
   fr: {
@@ -32,11 +35,13 @@ const copy = {
     browseButton: 'Voir les signalements',
     demo: 'Données de démonstration',
     demoHint: 'Exemples fictifs · non vérifiés · aucune connexion aux services municipaux',
-    communityData: 'Signalements publics · non vérifiés · aucune transmission officielle',
+    communityData: 'Signalements examinés par l’équipe avant publication · aucun envoi officiel',
     localMode: 'Stockage persistant de ce serveur',
     mongoMode: 'Connecté à MongoDB',
-    allAreas: 'Toutes les villes',
-    areaLabel: 'Ville',
+    allAreas: 'Tous les gouvernorats',
+    areaLabel: 'Gouvernorat',
+    governorateLabel: 'Gouvernorat',
+    selectGovernorate: 'Choisir un gouvernorat',
     boardTitle: 'Signalements du quartier',
     boardSub: 'Des repères partagés, pas des dossiers officiels.',
     search: 'Rechercher un lieu ou un problème',
@@ -57,10 +62,10 @@ const copy = {
     details: 'Voir le détail',
     closeDetails: 'Fermer le détail',
     sample: 'Exemple fictif',
-    submitted: 'Signalement envoyé',
-    submittedText: 'Merci. Votre signalement est maintenant visible dans le tableau.',
+    submitted: 'Signalement reçu',
+    submittedText: 'Il sera examiné avant d’apparaître publiquement. Aucun compte ni nom requis.',
     formTitle: 'Décrire un problème',
-    formNote: 'Le signalement sera public. Ne partagez pas de données personnelles. Il ne sera pas transmis automatiquement à une municipalité.',
+    formNote: 'Chaque signalement est examiné avant publication. N’indiquez pas de nom, numéro de téléphone ni autre donnée personnelle. Rien n’est transmis à une municipalité.',
     titleLabel: 'En quelques mots',
     titlePlaceholder: 'Ex. : Éclairage public en panne',
     categoryLabel: 'Type de problème',
@@ -70,7 +75,7 @@ const copy = {
     cityPlaceholder: 'Ex. : Tunis',
     descriptionLabel: 'Ce que vous avez constaté',
     descriptionPlaceholder: 'Décrivez le problème simplement : où, depuis quand, et ce qui gêne.',
-    sendReport: 'Publier le signalement',
+    sendReport: 'Envoyer pour examen',
     cancel: 'Annuler',
     required: 'Champ obligatoire',
     loadError: 'Impossible de charger les signalements.',
@@ -79,9 +84,19 @@ const copy = {
     emptyHint: 'Essayez un autre filtre ou ajoutez le premier repère.',
     feedError: 'Le signalement n’a pas pu être publié. Vérifiez votre connexion et réessayez.',
     rateLimited: 'Trop de signalements ont été envoyés depuis cette connexion. Réessayez dans quelques minutes.',
+    support: 'Je le constate aussi',
+    supported: 'Vous l’avez confirmé',
+    flagReport: 'Signaler un contenu',
+    flagConfirm: 'Transmettre ce signalement à l’équipe de modération ?',
+    supportThanks: 'Merci, votre confirmation est comptée.',
+    flagThanks: 'Merci. Le contenu a été signalé à l’équipe.',
+    communityActionError: 'Cette action n’a pas abouti. Réessayez.',
+    communityActionUnavailable: 'Les interactions ne sont pas configurées sur ce serveur.',
+    communityFlags: 'Signalements de contenu',
+    moderationPending: 'En attente de revue',
     moderationLink: 'Espace modération',
     moderationTitle: 'Modération communautaire',
-    moderationIntro: 'Vérifiez les signalements, ajustez leur état et masquez ceux qui ne doivent plus apparaître. Les états ne confirment jamais une intervention officielle.',
+    moderationIntro: 'Les nouveaux signalements attendent ici. Examinez le contenu avant de le rendre visible. Les confirmations et alertes communautaires ne vérifient pas les faits.',
     moderationPassword: 'Clé de modération',
     moderationSignIn: 'Ouvrir la modération',
     moderationLoadError: 'Impossible de charger les signalements à modérer.',
@@ -122,11 +137,13 @@ const copy = {
     browseButton: 'عرض البلاغات',
     demo: 'بيانات تجريبية',
     demoHint: 'أمثلة خيالية · غير مؤكّدة · لا اتصال بالبلديات',
-    communityData: 'بلاغات عامة · غير مؤكّدة · لا إرسال رسمي',
+    communityData: 'تُراجع البلاغات قبل النشر · لا إرسال رسمي',
     localMode: 'تخزين دائم على هذا الخادم',
     mongoMode: 'متصل بقاعدة MongoDB',
-    allAreas: 'كل المدن',
-    areaLabel: 'المدينة',
+    allAreas: 'كل الولايات',
+    areaLabel: 'الولاية',
+    governorateLabel: 'الولاية',
+    selectGovernorate: 'اختر ولاية',
     boardTitle: 'بلاغات الحيّ',
     boardSub: 'معلومات يتشاركها السكان، وليست ملفات رسمية.',
     search: 'ابحث عن مكان أو مشكلة',
@@ -147,10 +164,10 @@ const copy = {
     details: 'التفاصيل',
     closeDetails: 'إخفاء التفاصيل',
     sample: 'مثال خيالي',
-    submitted: 'تمّ إرسال البلاغ',
-    submittedText: 'شكراً. أصبح بلاغك ظاهراً الآن في لوحة الحيّ.',
+    submitted: 'تمّ استلام البلاغ',
+    submittedText: 'ستتم مراجعته قبل نشره. لا حاجة إلى حساب أو اسم.',
     formTitle: 'وصف المشكلة',
-    formNote: 'سيكون البلاغ ظاهراً للجميع. لا تشارك بيانات شخصية. لن يُرسل تلقائياً إلى البلدية.',
+    formNote: 'تُراجع البلاغات قبل النشر. لا تذكر اسماً أو رقم هاتف أو أي بيانات شخصية. لن يُرسل شيء إلى البلدية.',
     titleLabel: 'عنوان مختصر',
     titlePlaceholder: 'مثال: عطب في الإنارة العمومية',
     categoryLabel: 'نوع المشكلة',
@@ -160,7 +177,7 @@ const copy = {
     cityPlaceholder: 'مثال: تونس',
     descriptionLabel: 'ما الذي لاحظته؟',
     descriptionPlaceholder: 'صِف المشكلة باختصار: أين ومتى بدأت وما أثرها؟',
-    sendReport: 'نشر البلاغ',
+    sendReport: 'إرسال للمراجعة',
     cancel: 'إلغاء',
     required: 'حقل مطلوب',
     loadError: 'تعذّر تحميل البلاغات.',
@@ -169,9 +186,19 @@ const copy = {
     emptyHint: 'جرّب مرشّحاً آخر أو أضف أول إشارة.',
     feedError: 'تعذّر نشر البلاغ. تحقّق من الاتصال ثم أعد المحاولة.',
     rateLimited: 'تم إرسال بلاغات كثيرة من هذا الاتصال. حاول مجدداً بعد بضع دقائق.',
+    support: 'ألاحظ المشكلة أيضاً',
+    supported: 'لقد أكّدت المشكلة',
+    flagReport: 'الإبلاغ عن محتوى',
+    flagConfirm: 'إرسال هذا البلاغ إلى فريق الإشراف؟',
+    supportThanks: 'شكراً، تم تسجيل تأكيدك.',
+    flagThanks: 'شكراً، تم إرسال البلاغ إلى فريق الإشراف.',
+    communityActionError: 'تعذّر إتمام هذا الإجراء. حاول مجدداً.',
+    communityActionUnavailable: 'التفاعلات غير مفعّلة على هذا الخادم.',
+    communityFlags: 'بلاغات المحتوى',
+    moderationPending: 'بانتظار المراجعة',
     moderationLink: 'مساحة الإشراف',
     moderationTitle: 'الإشراف المجتمعي',
-    moderationIntro: 'راجع البلاغات وعدّل حالتها أو أخفِ ما لا ينبغي أن يظهر. الحالات لا تؤكد تدخلاً رسمياً.',
+    moderationIntro: 'تنتظر البلاغات الجديدة هنا. راجع المحتوى قبل إظهاره. تأكيدات المجتمع وتنبيهاته لا تتحقق من صحة الوقائع.',
     moderationPassword: 'مفتاح الإشراف',
     moderationSignIn: 'فتح لوحة الإشراف',
     moderationLoadError: 'تعذّر تحميل البلاغات للإشراف.',
@@ -203,8 +230,6 @@ const copy = {
 };
 
 const categories = ['water', 'waste', 'road', 'lighting', 'other'];
-const cities = ['Tunis', 'Sfax', 'Sousse'];
-
 function CategoryIcon({ category, size = 16 }) {
   const common = { size, strokeWidth: 1.8, 'aria-hidden': true };
   if (category === 'water') return <Droplets {...common} />;
@@ -214,6 +239,21 @@ function CategoryIcon({ category, size = 16 }) {
   return <CircleAlert {...common} />;
 }
 
+function governorateName(id, language) {
+  const governorate = governorates.find((item) => item.id === id);
+  return governorate ? governorate[language] : '';
+}
+
+function reportLocation(report, language) {
+  const parts = [report.location, report.area, governorateName(report.governorate, language)].filter(Boolean);
+  const visible = [];
+  for (const part of parts) {
+    const normalized = part.toLocaleLowerCase();
+    if (!visible.some((existing) => existing.toLocaleLowerCase().includes(normalized))) visible.push(part);
+  }
+  return visible.join(' · ');
+}
+
 function App() {
   const [language, setLanguage] = useState('fr');
   const [reports, setReports] = useState([]);
@@ -221,7 +261,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [category, setCategory] = useState('all');
-  const [area, setArea] = useState('all');
+  const [governorate, setGovernorate] = useState('all');
   const [query, setQuery] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -233,6 +273,7 @@ function App() {
     category: 'water',
     location: '',
     area: '',
+    governorate: '',
     description: '',
   });
   const [fieldErrors, setFieldErrors] = useState({});
@@ -245,9 +286,76 @@ function App() {
   const [moderationError, setModerationError] = useState('');
   const [moderationMessage, setModerationMessage] = useState('');
   const [shareFeedback, setShareFeedback] = useState('');
+  const [supportedReportIds, setSupportedReportIds] = useState(() => readSavedIds('hawma-supported-reports'));
+  const [flaggedReportIds, setFlaggedReportIds] = useState(() => readSavedIds('hawma-flagged-reports'));
+  const [communityBusy, setCommunityBusy] = useState('');
+  const [communityFeedback, setCommunityFeedback] = useState({});
 
   const t = copy[language];
   const isArabic = language === 'ar';
+
+  function readSavedIds(key) {
+    try {
+      const value = JSON.parse(window.localStorage.getItem(key) || '[]');
+      return Array.isArray(value) ? value.filter((id) => typeof id === 'string').slice(-500) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function rememberReportAction(key, setter, reportId) {
+    setter((previous) => {
+      const next = [...new Set([...previous, reportId])].slice(-500);
+      try {
+        window.localStorage.setItem(key, JSON.stringify(next));
+      } catch {
+        // The server still deduplicates actions when browser storage is unavailable.
+      }
+      return next;
+    });
+  }
+
+  async function sendCommunityAction(report, action) {
+    if (communityBusy) return;
+    setCommunityBusy(`${report.id}:${action}`);
+    setCommunityFeedback((previous) => ({ ...previous, [report.id]: '' }));
+    try {
+      const response = await fetch(`/api/reports/${encodeURIComponent(report.id)}/${action}`, { method: 'POST' });
+      if (!response.ok) {
+        throw new Error(response.status === 429
+          ? t.rateLimited
+          : response.status === 503 ? t.communityActionUnavailable : t.communityActionError);
+      }
+      const data = await response.json();
+      if (action === 'support') {
+        rememberReportAction('hawma-supported-reports', setSupportedReportIds, report.id);
+        setReports((previous) => previous.map((item) => (
+          item.id === report.id ? { ...item, supportCount: data.supportCount } : item
+        )));
+        setCommunityFeedback((previous) => ({ ...previous, [report.id]: t.supportThanks }));
+      } else {
+        rememberReportAction('hawma-flagged-reports', setFlaggedReportIds, report.id);
+        setCommunityFeedback((previous) => ({ ...previous, [report.id]: t.flagThanks }));
+      }
+    } catch (error) {
+      setCommunityFeedback((previous) => ({
+        ...previous,
+        [report.id]: error.message || t.communityActionError,
+      }));
+    } finally {
+      setCommunityBusy('');
+    }
+  }
+
+  function supportReport(report) {
+    if (supportedReportIds.includes(report.id)) return;
+    sendCommunityAction(report, 'support');
+  }
+
+  function flagReport(report) {
+    if (flaggedReportIds.includes(report.id) || !window.confirm(t.flagConfirm)) return;
+    sendCommunityAction(report, 'flag');
+  }
 
   async function shareReport(report) {
     const url = new URL(window.location.href);
@@ -276,6 +384,7 @@ function App() {
     try {
       const params = new URLSearchParams();
       if (category !== 'all') params.set('category', category);
+      if (governorate !== 'all') params.set('governorate', governorate);
       if (query.trim()) params.set('q', query.trim());
       const response = await fetch(`/api/reports?${params.toString()}`, { signal });
       if (!response.ok) throw new Error(`Request failed: ${response.status}`);
@@ -297,7 +406,7 @@ function App() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [category, query]);
+  }, [category, governorate, query]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -319,8 +428,8 @@ function App() {
   }, [reports]);
 
   const visibleReports = useMemo(
-    () => reports.filter((report) => area === 'all' || report.area.toLocaleLowerCase() === area.toLocaleLowerCase()),
-    [reports, area],
+    () => reports.filter((report) => governorate === 'all' || report.governorate === governorate),
+    [reports, governorate],
   );
   const statusCounts = useMemo(
     () => ({
@@ -330,11 +439,6 @@ function App() {
     }),
     [reports],
   );
-  const areas = useMemo(
-    () => [...new Set([...cities, ...reports.map((report) => report.area.trim()).filter(Boolean)])],
-    [reports],
-  );
-
   function startReport() {
     setFormOpen(true);
     setSuccess(false);
@@ -354,6 +458,7 @@ function App() {
     if (!categories.includes(form.category)) errors.category = t.required;
     if (form.location.trim().length < 3) errors.location = t.required;
     if (form.area.trim().length < 2) errors.area = t.required;
+    if (!governorates.some((item) => item.id === form.governorate)) errors.governorate = t.required;
     if (form.description.trim().length < 10) errors.description = t.required;
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -383,12 +488,11 @@ function App() {
         setFieldErrors(Object.fromEntries(Object.keys(data.fields || {}).map((field) => [field, t.required])));
         throw new Error(response.status === 429 ? t.rateLimited : data.fields ? t.requiredFields : t.feedError);
       }
-      setReports((previous) => [data.report, ...previous]);
-      setForm({ title: '', category: 'water', location: '', area: '', description: '' });
+      setForm({ title: '', category: 'water', location: '', area: '', governorate: '', description: '' });
       setFormOpen(false);
       setSuccess(true);
       setCategory('all');
-      setArea('all');
+      setGovernorate('all');
       setQuery('');
       document.getElementById('reports-heading')?.focus();
     } catch (error) {
@@ -402,6 +506,15 @@ function App() {
     setFormOpen(false);
     setSubmitError('');
     setFieldErrors({});
+  }
+
+  function closeModeration() {
+    setModerationOpen(false);
+    setModeratorToken('');
+    setModeratorReady(false);
+    setModerationReports([]);
+    setModerationError('');
+    setModerationMessage('');
   }
 
   function statusLabel(status) {
@@ -603,6 +716,26 @@ function App() {
                   {fieldErrors.category && <small id="category-error" className="field-error">{t.required}</small>}
                 </label>
                 <label className="field">
+                  <span>{t.governorateLabel}</span>
+                  <span className="select-wrap">
+                    <select
+                      name="governorate"
+                      value={form.governorate}
+                      onChange={updateField}
+                      aria-invalid={Boolean(fieldErrors.governorate)}
+                      aria-describedby={fieldErrors.governorate ? 'governorate-error' : undefined}
+                      required
+                    >
+                      <option value="">{t.selectGovernorate}</option>
+                      {governorates.map((item) => (
+                        <option value={item.id} key={item.id}>{isArabic ? item.ar : item.fr}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </span>
+                  {fieldErrors.governorate && <small id="governorate-error" className="field-error">{t.required}</small>}
+                </label>
+                <label className="field">
                   <span>{t.cityLabel}</span>
                   <input
                     name="area"
@@ -680,7 +813,7 @@ function App() {
                 <h2 id="moderation-heading">{t.moderationTitle}</h2>
                 <p className="moderation-intro">{t.moderationIntro}</p>
               </div>
-              <button className="icon-button" type="button" onClick={() => setModerationOpen(false)} aria-label={t.cancel}>
+              <button className="icon-button" type="button" onClick={closeModeration} aria-label={t.cancel}>
                 <X size={19} aria-hidden="true" />
               </button>
             </div>
@@ -711,8 +844,10 @@ function App() {
                   <article className="moderation-row" key={report.id}>
                     <div className="moderation-report-title">
                       <strong dir="auto">{isArabic ? (report.titleAr || report.title) : report.title}</strong>
-                      <span dir="auto">{report.area} · {report.location}</span>
+                      <span dir="auto">{reportLocation(report, language)}</span>
                       {report.sample && <small>{t.moderationSample}</small>}
+                      {report.visibility === 'pending' && <small>{t.moderationPending}</small>}
+                      {(report.flagCount || 0) > 0 && <small>{t.communityFlags}: {report.flagCount}</small>}
                     </div>
                     <label className="field">
                       <span>{t.moderationStatus}</span>
@@ -732,6 +867,7 @@ function App() {
                         onChange={(event) => updateModerationField(report.id, 'visibility', event.target.value)}
                       >
                         <option value="public">{t.moderationPublic}</option>
+                        <option value="pending">{t.moderationPending}</option>
                         <option value="hidden">{t.moderationHidden}</option>
                       </select>
                     </label>
@@ -775,9 +911,11 @@ function App() {
             <label className="area-select">
               <span>{t.areaLabel}</span>
               <span className="select-wrap">
-                <select value={area} onChange={(event) => setArea(event.target.value)} aria-label={t.areaLabel}>
+                <select value={governorate} onChange={(event) => setGovernorate(event.target.value)} aria-label={t.areaLabel}>
                   <option value="all">{t.allAreas}</option>
-                  {areas.map((city) => <option key={city} value={city}>{city}</option>)}
+                  {governorates.map((item) => (
+                    <option key={item.id} value={item.id}>{isArabic ? item.ar : item.fr}</option>
+                  ))}
                 </select>
                 <ChevronDown size={15} aria-hidden="true" />
               </span>
@@ -875,7 +1013,10 @@ function App() {
                       <span className="report-main">
                         <span className="report-sequence">#{String(index + 1).padStart(2, '0')}</span>
                         <strong dir="auto">{isArabic ? (report.titleAr || report.title) : report.title}</strong>
-                        <span className="report-location" dir="auto"><MapPin size={13} aria-hidden="true" />{report.location}</span>
+                        <span className="report-location" dir="auto">
+                          <MapPin size={13} aria-hidden="true" />
+                          {reportLocation(report, language)}
+                        </span>
                       </span>
                       <span className={`report-status status-${report.status}`}>
                         <span className="status-glyph" aria-hidden="true">{report.status === 'resolved' ? '✓' : report.status === 'in_progress' ? '◷' : '●'}</span>
@@ -887,6 +1028,32 @@ function App() {
                       {report.moderatedAt && <span className="detail-disclaimer">{t.moderatedOn} {formatModerationDate(report.moderatedAt)}</span>}
                       <span className="detail-disclaimer">{report.sample ? t.sample : t.reportSent}</span>
                       <span className="detail-disclaimer">{t.statusExplainer}</span>
+                      {!report.sample && (
+                        <div className="detail-actions">
+                          <button
+                            className="detail-support"
+                            type="button"
+                            disabled={supportedReportIds.includes(report.id) || communityBusy === `${report.id}:support`}
+                            onClick={() => supportReport(report)}
+                          >
+                            {communityBusy === `${report.id}:support`
+                              ? <LoaderCircle className="spin" size={15} aria-hidden="true" />
+                              : <ThumbsUp size={15} aria-hidden="true" />}
+                            {supportedReportIds.includes(report.id) ? t.supported : t.support}
+                            <span>{report.supportCount || 0}</span>
+                          </button>
+                          <button
+                            className="detail-flag"
+                            type="button"
+                            disabled={flaggedReportIds.includes(report.id) || communityBusy === `${report.id}:flag`}
+                            onClick={() => flagReport(report)}
+                          >
+                            <Flag size={14} aria-hidden="true" />
+                            {flaggedReportIds.includes(report.id) ? t.flagThanks : t.flagReport}
+                          </button>
+                        </div>
+                      )}
+                      {communityFeedback[report.id] && <span className="detail-disclaimer" role="status">{communityFeedback[report.id]}</span>}
                       <button className="detail-share" type="button" onClick={() => shareReport(report)}>{t.shareReport}</button>
                       {shareFeedback.startsWith(`${report.id}:`) && <span className="detail-disclaimer" role="status">{shareFeedback.slice(report.id.length + 1)}</span>}
                     </div>
@@ -918,8 +1085,12 @@ function App() {
           aria-expanded={moderationOpen}
           aria-controls={moderationOpen ? 'moderation' : undefined}
           onClick={() => {
-            setModerationOpen((open) => !open);
-            window.setTimeout(() => document.getElementById('moderation')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+            if (moderationOpen) {
+              closeModeration();
+            } else {
+              setModerationOpen(true);
+              window.setTimeout(() => document.getElementById('moderation')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+            }
           }}
         >
           {t.moderationLink}

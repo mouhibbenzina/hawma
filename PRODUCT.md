@@ -15,10 +15,10 @@ Make it easier for residents to document a local public-space issue, find relate
 A lightweight, multilingual neighborhood issue board designed around clear locations, useful reports, and visible follow-up rather than an unverified promise of official case management.
 
 ## Operating Context
-This is a web MVP for Tunisia. French is the initial interface language, with an Arabic interface and right-to-left layout. Users browse reports and can submit an issue with a category, location, and description.
+This is a web pilot for Tunisia. French is the initial interface language, with an Arabic interface and right-to-left layout. The location picker covers all 24 governorates, while the city, town, or neighborhood remains free text so smaller localities can participate. Users browse public reports, submit observations without an account, confirm that they see an issue, and privately flag content for moderator review.
 
 ## Capabilities and Constraints
-The implementation uses React, Express, Node.js, and MongoDB, with a persistent single-instance JSON-file fallback when MongoDB is not configured. Reports are public and unverified by default. A bearer-token moderator can update a report's board status, add a private note, or hide it. No official municipal connection, identity system, emergency response, or real-world service outcome is established.
+The implementation uses React, Express, Node.js, and MongoDB, with a persistent single-instance JSON-file fallback for local development. New reports remain private until a moderator publishes them. Published content is still unverified community observation. An administrator key protects moderation; opaque anonymous visitor identifiers are used only to deduplicate support and flag actions. No resident account, official municipal connection, emergency response, or real-world service outcome is established. Production requires MongoDB and stable, private moderator and interaction secrets. The included Compose stack is single-host and its local backup volume is not off-site disaster recovery.
 
 ## Evidence on Hand
 The World Bank's Tunisia Country Climate and Development Report overview identifies water scarcity, coastal erosion, and increasing flood risk among Tunisia's climate challenges: https://www.worldbank.org/en/country/tunisia/publication/tunisia-country-climate-and-development-report. This is context for why resilient local infrastructure matters, not evidence about individual reports or a claim that this app addresses those national challenges.

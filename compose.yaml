@@ -8,12 +8,11 @@ services:
       TRUST_PROXY_HOPS: "1"
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
       MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?Set MONGO_APP_USERNAME in .env}:${MONGO_APP_PASSWORD:?Set MONGO_APP_PASSWORD in .env}@mongo:27017/hawma?authSource=hawma
-      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in .env}
+      SUPPORT_SECRET: ${SUPPORT_SECRET:?Set SUPPORT_SECRET in .env}
     depends_on:
       mongo:
         condition: service_healthy
-    volumes:
-      - hawma_reports:/app/server/data
     expose:
       - "5000"
     healthcheck:
@@ -51,6 +50,27 @@ services:
       retries: 5
       start_period: 20s
 
+  mongo-backup:
+    image: mongo:7
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?Set MONGO_APP_USERNAME in .env}:${MONGO_APP_PASSWORD:?Set MONGO_APP_PASSWORD in .env}@mongo:27017/hawma?authSource=hawma
+    volumes:
+      - mongodb_backups:/backups
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        while true; do
+          backup="/backups/hawma-$$(date -u +%Y%m%dT%H%M%SZ).archive.gz"
+          mongodump --uri="$$MONGODB_URI" --archive="$$backup" --gzip
+          find /backups -type f -name 'hawma-*.archive.gz' -mtime +14 -delete
+          sleep 86400
+        done
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -70,6 +90,6 @@ services:
 
 volumes:
   mongodb_data:
-  hawma_reports:
+  mongodb_backups:
   caddy_data:
   caddy_config:

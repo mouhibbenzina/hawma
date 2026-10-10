@@ -366,8 +366,22 @@ h1 { max-width: 540px; font-weight: 700; line-height: 1.4; }
 .report-details p { flex: 1; color: var(--muted); }
 .report-details[hidden] { display: none; }
 .detail-disclaimer { color: var(--muted); }
-.detail-share { min-height: 34px; border: 1px solid var(--rule); padding: 4px 9px; background: transparent; font-weight: 700; }
-.detail-share:hover { color: var(--paper); background: var(--slate); }
+.detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.detail-actions button, .detail-share {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--rule);
+  padding: 5px 10px;
+  background: transparent;
+  font-weight: 700;
+}
+.detail-actions button:hover, .detail-share:hover { color: var(--paper); background: var(--slate); }
+.detail-actions button:disabled { color: var(--green); background: color-mix(in srgb, var(--green) 10%, var(--paper)); cursor: default; }
+.detail-actions button:focus-visible, .detail-share:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.detail-actions button span { min-width: 20px; padding-inline: 4px; border-inline-start: 1px solid currentColor; text-align: center; }
 
 .feed-state {
   display: flex;

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+server/data/
+.impeccable/
+.playwright-mcp/
+.DS_Store
+npm-debug.log*

@@ -1,0 +1,3 @@
+{$HAWMA_DOMAIN} {
+	reverse_proxy app:5000
+}
